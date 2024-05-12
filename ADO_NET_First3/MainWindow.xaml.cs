@@ -1,163 +1,83 @@
-﻿using System;
-using System.Data.SqlClient;
-using System.Windows;
+﻿
+using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Runtime.InteropServices;
+using System.Xml;
 
-namespace VegetablesAndFruitsApp
+namespace Data
 {
-    public partial class MainWindow : Window
+    public class DBManager
     {
-        private readonly string connectionString = "YourConnectionStringHere"; // Замініть це на вашу реальну рядок підключення
-        private SqlConnection connection;
+        public string? ConnectionString { get; set; } = null;
 
-        public MainWindow()
+        public DBManager(string? connectionString = null)
         {
-            InitializeComponent();
-            connection = new SqlConnection(connectionString);
+            this.ConnectionString = connectionString;
         }
 
-        private void ConnectToDatabase()
+        public bool ConnectToDB()
         {
             try
             {
-                connection.Open();
-                MessageBox.Show("Connected to database successfully.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error connecting to database: " + ex.Message);
-            }
-        }
-
-        private void DisconnectFromDatabase()
-        {
-            try
-            {
-                connection.Close();
-                MessageBox.Show("Disconnected from database.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error disconnecting from database: " + ex.Message);
-            }
-        }
-
-        private void ShowAllVegetablesAndFruitsInfo()
-        {
-            try
-            {
-                SqlCommand command = new SqlCommand("SELECT * FROM VegetablesAndFruits", connection);
-                SqlDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
+                using (SqlConnection connection = new SqlConnection(this.ConnectionString))
                 {
-                    string name = reader.GetString(0);
-                    string type = reader.GetString(1);
-                    string color = reader.GetString(2);
-                    int calories = reader.GetInt32(3);
-
-                    MessageBox.Show($"Name: {name}, Type: {type}, Color: {color}, Calories: {calories}");
+                    connection.Open();
                 }
-
-                reader.Close();
+                return true;
             }
-            catch (Exception ex)
+            catch (SqlException ex)
             {
-                MessageBox.Show("Error retrieving data: " + ex.Message);
+                throw new Exception(ex.Message);
             }
+
         }
 
-        private int CountVegetables()
+        public int CreateOrInsertOrDelete(string query)
         {
+            int result = 0;
             try
             {
-                SqlCommand command = new SqlCommand("SELECT COUNT(*) FROM VegetablesAndFruits WHERE Type = 'Vegetable'", connection);
-                return (int)command.ExecuteScalar();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error counting vegetables: " + ex.Message);
-                return -1;
-            }
-        }
-
-        private int CountFruits()
-        {
-            try
-            {
-                SqlCommand command = new SqlCommand("SELECT COUNT(*) FROM VegetablesAndFruits WHERE Type = 'Fruit'", connection);
-                return (int)command.ExecuteScalar();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error counting fruits: " + ex.Message);
-                return -1;
-            }
-        }
-
-        private int CountVegetablesAndFruitsByColor(string color)
-        {
-            try
-            {
-                SqlCommand command = new SqlCommand($"SELECT COUNT(*) FROM VegetablesAndFruits WHERE Color = '{color}'", connection);
-                return (int)command.ExecuteScalar();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error counting vegetables and fruits by color {color}: " + ex.Message);
-                return -1;
-            }
-        }
-
-        private void ShowVegetablesAndFruitsByCaloriesRange(int minCalories, int maxCalories)
-        {
-            try
-            {
-                SqlCommand command = new SqlCommand($"SELECT * FROM VegetablesAndFruits WHERE Calories BETWEEN {minCalories} AND {maxCalories}", connection);
-                SqlDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
+                using (SqlConnection connection = new SqlConnection(this.ConnectionString))
                 {
-                    string name = reader.GetString(0);
-                    string type = reader.GetString(1);
-                    string color = reader.GetString(2);
-                    int calories = reader.GetInt32(3);
-
-                    MessageBox.Show($"Name: {name}, Type: {type}, Color: {color}, Calories: {calories}");
+                    connection.Open();
+                    SqlCommand cmd = new SqlCommand(query, connection);
+                    result = cmd.ExecuteNonQuery();
                 }
+                return result;
 
-                reader.Close();
             }
-            catch (Exception ex)
+            catch (SqlException ex)
             {
-                MessageBox.Show("Error retrieving data: " + ex.Message);
+                throw new Exception(ex.Message);
             }
         }
 
-        private void ShowVegetablesAndFruitsByColor(string color)
+        public List<string> SelectFromDb(string query)
         {
             try
             {
-                SqlCommand command = new SqlCommand($"SELECT * FROM VegetablesAndFruits WHERE Color = '{color}'", connection);
-                SqlDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
+                List<string> result = new List<string>();
+                using (SqlConnection connection = new SqlConnection(this.ConnectionString))
                 {
-                    string name = reader.GetString(0);
-                    string type = reader.GetString(1);
-                    string fruitColor = reader.GetString(2);
-                    int calories = reader.GetInt32(3);
+                    connection.Open();
+                    SqlCommand cmd = new SqlCommand(query, connection);
+                    var sqlReader = cmd.ExecuteReader();
+                    while (sqlReader.Read())
+                    {
+                        for (int i = 1; i < sqlReader.FieldCount; i++)
+                        {
+                            result.Add(sqlReader.GetValue(i).ToString());
+                        }
 
-                    MessageBox.Show($"Name: {name}, Type: {type}, Color: {fruitColor}, Calories: {calories}");
+                    }
                 }
-
-                reader.Close();
+                return result;
             }
-            catch (Exception ex)
+            catch (SqlException ex)
             {
-                MessageBox.Show("Error retrieving data: " + ex.Message);
+                throw new Exception(ex.Message);
             }
         }
-
 
 
     }
