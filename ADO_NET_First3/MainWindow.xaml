@@ -26,4 +26,4 @@
         </StackPanel>
         <DataGrid x:Name="dgMain" Grid.Row="2" AutoGenerateColumns="True" Style="{StaticResource MaterialDesignDataGrid}" Background="White" IsReadOnly="True" Grid.ColumnSpan="2"/>
     </Grid>
-</Window>
+</Window> 
